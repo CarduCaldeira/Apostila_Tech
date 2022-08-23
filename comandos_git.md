@@ -95,6 +95,10 @@ Para mostrar o histórico de commits mais completo (inclusive com o que foi alte
 ```
 git log -p
 ```
+Para mostrar o histórico de commits com elementos graficos
+```
+git log --graph
+```
 
 ### Git push
 Para enviar as alterações para o repositório remoto,
@@ -163,7 +167,9 @@ Para ver nossas branchs e também saber em qual estamos
 git branch
 ```
 Para excluir uma branch de o comando
-
+```
+git branch -d <nome-da-branch>
+```
 
 ### Git merge
 Suponha que tenhamos uma branch com o nome titulo e a branch principal
