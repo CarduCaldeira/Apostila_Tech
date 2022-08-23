@@ -3,11 +3,11 @@
 Voltar à [Página inicial](README.md).
 
 ## Nomeclatura
--[] HEAD: Estado atual do nosso código, ou seja, onde o Git os colocou
+- [ ] HEAD: Estado atual do nosso código, ou seja, onde o Git os colocou
 
--[] Working tree: Local onde os arquivos realmente estão sendo armazenados e editados
+- [ ] Working tree: Local onde os arquivos realmente estão sendo armazenados e editados
 
--[] index: Local onde o Git armazena o que será commitado, ou seja, o local entre a working tree e o repositório Git em si.
+- [ ] index: Local onde o Git armazena o que será commitado, ou seja, o local entre a working tree e o repositório Git em si.
 
 ## Comandos Git
 
@@ -64,7 +64,7 @@ git  add .
 
 ### .Gitignore
 
-sfcnanviaviaisavva
+sfc
 
 ### Git commit
 Para commitar o projeto 
@@ -102,6 +102,9 @@ Para enviar as alterações para o repositório remoto,
 git push <nome-do-repositorio> <sua-Branch>
 ```
 No caso, se queremos enviar para a branch  main do GitHub podemos dar o comando "git push origin main" ou "git push -u origin main", cujo -u define que, sempre que usarmos git push e estivermos na main, o envio seja feito para origin. Ou seja, a partir de então poderemos executar simplesmente git push.
+
+Lembre de sempre antes de dar o comando push dar o comando pull, para não ter divergências
+entre o repositório local e remoto.
 
 ### Git remote
 Se você não clonou nenhum repositório e deseja enviar suas alterações para um servidor remoto, precisa adicioná-lo antes com
@@ -159,6 +162,8 @@ Para ver nossas branchs e também saber em qual estamos
 ```
 git branch
 ```
+Para excluir uma branch de o comando
+
 
 ### Git merge
 Suponha que tenhamos uma branch com o nome titulo e a branch principal
