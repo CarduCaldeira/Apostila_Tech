@@ -208,3 +208,4 @@ Ao executarmos, receberemos a lista dos commits que queremos analisar. Será mos
 
 
 ## GitHub
+- [ ] Em construção
