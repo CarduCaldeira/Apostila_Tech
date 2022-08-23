@@ -211,7 +211,15 @@ e queremos selecionar os três últimos commits, de o comando
 git rebase -i 9ee44a8
 ```
 Ao executarmos, receberemos a lista dos commits que queremos analisar. Será mostrado o commit mais antigo para o mais novo, de cima para baixo, e informaremos, no commit desejado, que queremos unificar tal commit com o commit anterior trocando pick por s. Por fim, podemos redefinir a mensagem para este commit unificado.
-
-
+### Como é o CTRL+Z no Git?
+Caso você queria restaurar um arquivo até o seu último commit
+ ```
+git checkout -- <nome-do-arquivo>
+```
+Caso você já tenha feito "git add <nome-do-arquivo>" para retirar tal arquivo das mudanças a serem submetidas
+ ```
+git reset HEAD comandos_git.md
+```
+Caso você ja tenha feito o commit e queria reverte-lo para o anterior( na realidade o git criara outro commit )
 ## GitHub
 - [ ] Em construção
