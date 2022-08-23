@@ -252,7 +252,7 @@ ou
 ```
 git stash pop <numero-da-stash>
 ```
-pra recuperar as alterações e já elimminar ela da lista de stashs.
+pra recuperar as alterações e já eliminar ela da lista de stashs.
 
 ### Viajando no tempo
 Como podemos voltar o código a um commit específico? Para isso de o comando
@@ -264,6 +264,13 @@ Note que após esse comando a branch que estamos fica como detached, isto é, n�
 git checkout -b <nova-branch>
 ```
 que ira criar uma branch com o código do commit com o hash <Hash-do-commit>. 
+
+Na versões mais novas do git foi introduzido o restore, que visa substituir o checkout nessa parte referente a voltar para commits desejados, já
+que o checkout já era usado para mudança/criaçao de branchs (e la também foi criado o switch).
+Portanto outra forma (e mais recomendada) é a seguinte 
+```
+git restore --source <hash-do-commit> .
+```
 
 ### Tags e Releases 
 Podemos criar uma tag, isto é, um marco no projeto dando o comando
@@ -290,7 +297,7 @@ ou
 ```
 git push local v0.1.0
 ```
-O GitHub tem um tratamento especial para as tags que enviarmos. asuhaushau
+O GitHub tem um tratamento especial para as tags que enviarmos. 
 
 ## GitHub
 
