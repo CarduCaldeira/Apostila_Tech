@@ -64,7 +64,8 @@ git  add .
 
 ### .Gitignore
 
-sfcnanviaviaisavva
+O git oferece uma opção para conseguirmos ignorar arquivos/pastas do nosso projeto. Para isso
+crie um arquivo com o nome ".gitignore"  e adicione os arquivos/pastas que deseje que o git ignore.
 
 ### Git commit
 Para commitar o projeto 
