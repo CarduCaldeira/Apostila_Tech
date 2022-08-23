@@ -86,7 +86,7 @@ Para mostrar o histórico de commits
 ```
 git log
 ```
-Tal comando irá mostrar o hash/id dos commits, com seu respectivo autor, data e título do commit. Para mostrar o histórico de commits mais resumido
+Tal comando irá mostrar o hash dos commits, com seu respectivo autor, data e título do commit. Para mostrar o histórico de commits mais resumido
 ```
 git log --oneline
 ```
@@ -220,6 +220,44 @@ Caso você já tenha feito "git add <nome-do-arquivo>" para retirar tal arquivo 
  ```
 git reset HEAD comandos_git.md
 ```
-Caso você ja tenha feito o commit e queria reverte-lo para o anterior( na realidade o git criara outro commit )
+Caso você ja tenha feito o commit e queria reverte-lo para o anterior( na realidade o git criara outro commit em que retira as alterações do commit )
+ ```
+git revert <Hash-do-commit>
+```
+
+### Salvando para depois
+Imagine que fez algumas modificações em uma parte do codigo e não terminou. Caso voce não queira perder tais alterações porém também não quer commita-las de o comando
+ ```
+git stash
+```
+que ira salvar as alterações realizadas em relação ao último commit. Para mostrar as listas de stash dados
+ ```
+git stash list
+```
+Imagine que você fez outras alterações e fez um commit. Para recuperar as alterações que você salvou ao fazer "git stash" de o comando
+ ```
+git stash apply <numero-da-stash>
+```
+O <numero-da-stash> pode ser visto em "git stash list". Note que após "git stash apply <numero-da-stash>" tal stash continua salvo, para elminar ele da lista de
+```
+git stash drop <numero-da-stash>
+```
+ou 
+```
+git stash pop <numero-da-stash>
+```
+pra recuperar as alterações e já elimminar ela da lista de stashs.
+
+### Viajando no tempo
+Como podemos voltar o código a um commit específico? Para isso de o comando
+```
+git checkout <Hash-do-commit>
+```
+Note que após esse comando a branch que estamos fica como detached, isto é, não estamos em nehuma branch. Para "recuperar" o código do commit selecionado também de o comando
+```
+git checkout -b <nova-branch>
+```
+que ira criar uma branch com o código do commit com o hash <Hash-do-commit>.
+
 ## GitHub
 - [ ] Em construção
