@@ -220,6 +220,6 @@ Caso você já tenha feito "git add <nome-do-arquivo>" para retirar tal arquivo 
  ```
 git reset HEAD comandos_git.md
 ```
-Caso você ja tenha feito o commit e queria reverte-lo para o anterior( na realidade o git criara outro commit )
+Caso você ja tenha feito o commit e queria reverte-lo para o anterior( na realidade o git criara outro commit )  asuhaushauhsu
 ## GitHub
 - [ ] Em construção
