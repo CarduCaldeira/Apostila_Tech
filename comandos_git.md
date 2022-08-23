@@ -100,6 +100,12 @@ Para mostrar o histórico de commits com elementos graficos
 git log --graph
 ```
 
+### Git diff
+Para mostrar as deiferenças do arquivo salvo para o último commit de
+```
+git diff
+```
+
 ### Git push
 Para enviar as alterações para o repositório remoto,
 ```
@@ -113,7 +119,7 @@ entre o repositório local e remoto.
 ### Git remote
 Se você não clonou nenhum repositório e deseja enviar suas alterações para um servidor remoto, precisa adicioná-lo antes com
 ```
-git remote add <nome-que-daremos> <servidorRemoto>
+git remote add <nome-que-daremos-para-o-repositorio> <servidorRemoto>
 ``` 
 Para listar os repositórios conhecidos pelo repositório local 
 ```
@@ -257,7 +263,35 @@ Note que após esse comando a branch que estamos fica como detached, isto é, n�
 ```
 git checkout -b <nova-branch>
 ```
-que ira criar uma branch com o código do commit com o hash <Hash-do-commit>.
+que ira criar uma branch com o código do commit com o hash <Hash-do-commit>. 
+
+### Tags e Releases 
+Podemos criar uma tag, isto é, um marco no projeto dando o comando
+```
+git tag -a <nome-dado-a-tag> -m "<mensagem>"
+```
+Como por exemplo 
+```
+git tag -a v0.1.0 -m "Primeira versão (BETA) do curso"
+```
+Para ver as tags disponíveis
+```
+git tag
+```
+Assim como fizemos git push para um repositorio remoto de uma branch também podemos fazer para uma tag com
+```
+git push <nome-do-repositorio> <nome-dado-a-tag>
+```
+como por exemplo 
+```
+git push origin v0.1.0
+```
+ou
+```
+git push local v0.1.0
+```
+O GitHub tem um tratamento especial para as tags que enviarmos.
 
 ## GitHub
+
 - [ ] Em construção
