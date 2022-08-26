@@ -178,3 +178,121 @@ def decrescimo_salario(self):
 ```
 
 Aqui realizarei mais um commit com nome "introducao ao TDD".
+
+Uma curiosidade interessante é como podemos rodar um teste em específico. Por exemplo para rodar
+o teste do método **test_quando_idade_recebe_13_03_2000_deve_retornar_22** de o comando
+```
+pytest -v -k idade
+```
+O pytest ira procurar todos os métodos que possuem idade no seu nome.
+
+## Exceptions
+
+Considere o método calcular_bonus, que tem como objetivo dar uma bônus de 10% do salário para funcionários que ganham até 10.000, caso o salário seja maior o funcionário nao recebe tal bônus. Vamos testá-lo com 
+```
+def test_quando_calcular_bonus_recebe_1000_deve_retornar_100(self):
+    entrada = 1000  # given
+    esperado = 100
+
+    funcionario_teste = Funcionario('teste', '11/11/2000', entrada)
+    resultado = funcionario_teste.calcular_bonus() # when
+
+    assert resultado == esperado  # then
+```
+
+Se testarmos com entrada = 1000000 podemos ver que calcular_bonus retorna o valor 0. 
+Outra forma de testarmos é utilizando uma exception, isto é, um erro personalizado.
+
+Reescreva o método calcular_bonus bônus da seguinte forma
+```
+def calcular_bonus(self):
+    valor = self._salario * 0.1
+    if valor > 1000:
+        raise Exception('O salário é muito alto para receber um bônus')
+    return valor
+```
+Agora insira o código no arquivo main.py
+```
+ana = Funcionario('Ana', '12/03/1997', 100000000)
+
+print(ana.calcular_bonus())
+```
+Note que ao rodarmos main.py e agora o retorno é uma exceção com a justificativa de que o salário é muito alto para receber um bônus.
+
+A seguir, vamos construir um teste que considere a situação que o funcionário não recebe o bônus.
+Devemos inserir 
+```
+import pytest
+```
+em **test_bytebank.py**. Também insira
+```
+def test_quando_calcular_bonus_recebe_100000000_deve_retornar_exception(self):
+        with pytest.raises(Exception):
+            entrada = 100000000  # given
+
+            funconario_teste = Funcionario('teste', '11/11/2000', entrada)
+            resultado = funconario_teste.calcular_bonus()  # when
+
+            assert resultado  # then
+```
+
+Rode os testes e veja que todos passaram.
+
+## Marks
+
+Como vimos, conseguimos rodar teste específicos pelo nome do método, porém conforme o número de testes
+cresce rodar um teste específico pelo nome não fica prático. E aí que as Marks são úteis. Mas o que são Marks?  São tags que associamos a determinados testes. Primeiro é necessário importá-los 
+```
+from codigo.bytebank import Funcionario
+import pytest
+from pytest import mark
+```
+
+Vamos supor que queremos executar apenas os testes referentes ao método calcular_bonus. Então adicione
+uma mark **@mark.calcular_bonus**.
+```
+@mark.calcular_bonus
+def test_quando_calcular_bonus_recebe_1000_deve_retornar_100(self):
+    entrada = 1000  # given
+    esperado = 100
+
+    funcionario_teste = Funcionario('teste', '11/11/2000', entrada)
+    resultado = funcionario_teste.calcular_bonus() # when
+
+    assert resultado == esperado  # then
+
+
+@mark.calcular_bonus
+def test_quando_calcular_bonus_recebe_100000000_deve_retornar_exception(self):
+    with pytest.raises(Exception):
+        entrada = 100000000  # given
+
+        funcionario_teste = Funcionario('teste', '11/11/2000', entrada)
+        resultado = funcionario_teste.calcular_bonus()  # when
+
+            assert resultado  # then
+```
+Agora para rodar tais testes basta dar o comando
+```
+pytest -v -m calcular_bonus
+```
+Note que é exibido dois warnings(avisos). O pytest não sabe distinguir se é um erro de digitação ou um mark personalizado.
+Os marks não são apenas tags que podemos utilizar como referências para certos testes, eles têm outras utilidades e seguem alguns padrões. Para verificar quais tipos de marks existem no Pytest, vamos executar pytest --markers no terminal. Por exemplo, ao colocar `@pytest.mark.skip` antes de um teste, executaremos todos os testes e "pularemos" apenas este.
+
+Além do `@pytest.mark.skip` que "pula" um teste, temos o `@pytest.mark.skipif` que "pulará" o teste se uma condição for obedecida. Existe também o `@pytest.mark.xfail` que determina que um teste deve falhar, caso certa condição seja atendida. São diversos markers à disposição, é interessante consultarmos a [documentação](https://docs.pytest.org/en/7.1.x/how-to/mark.html#mark) do Pytest para encontrar formas de personalizar nossos códigos conforme nossas necessidades
+
+ Para retirar esses avisos, precisamos gerar um arquivo, onde incluiremos esses marks personalizados.
+ Em Python_TDD crie um arquivo pytest.ini
+
+ Este é um arquivo de configuração do Pytest e ele precede a configuração original do Pytest. É preciso tomar cuidado com o que colocamos nele, pois, uma vez o Pytest é executado, ele dará prioridade ao que está neste arquivo e, depois, considerará a configuração padrão do Pytest.
+ Ǹeste arquivo insira
+ ```
+ [pytest]
+markers =
+    calcular_bonus: Teste para o metodo calcular_bonus
+```
+
+Agora, se rodarmos o comando 'pytest -v -m calcular_bonus' novamente não serão apresentados warnings.
+
+Aqui iremos realizar mais um commit, com o nome "exceptions e marks".
+
