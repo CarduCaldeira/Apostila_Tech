@@ -296,3 +296,103 @@ Agora, se rodarmos o comando 'pytest -v -m calcular_bonus' novamente não serão
 
 Aqui iremos realizar mais um commit, com o nome "exceptions e marks".
 
+## Cobertura
+
+Sabemos que existem vários testes para vários segmentos do projeto, contudo não há garantia de que todas as linhas de código estão cobertas por algum teste. Quando trabalhamos com testes, a intenção é ter 100% de cobertura por testes. Claro, podemos conferir manualmente, porém em grandes projetos isto
+não é razoável. Para isso o pytest tem uma extensão chamada pytest-cov. Já temos instalado o pytest-cov 3.0.0, então podemos rodar o comando 
+```
+pytest --cov
+```
+Assim, o pytest-cov procurará todos os testes para checar a cobertura. Nos será mostrado a seguinte tabela
+
+![tabela-cov](../Imagens/tabela-cover.png)
+
+Em  miss temos a quantidade de linhas que não estão sendo cobertas em cada arquivo. Como temos interesse apenas no arquivo **bytebank.py** podemos espeficicar isso no comando selecinando o diretório
+em que queremos checar a cobertura. Assim, para selecionar o diretório codigo rode
+```
+pytest --cov=codigo tests/diretório
+```
+Como podemos saber qual parte do codigo não esta coberta? Para isso rode
+```
+pytest --cov=codigo tests/ --cov-report term-missing
+```
+ou 
+```
+pytest --cov=codigo tests/ --cov-report html
+```
+Que gerará um arquivo html reportadado mais informações sobre a cobertura de testes. 
+
+Que tera como retorno a tabela
+
+![tabela-missing](../Imagens/missing.png)
+
+Há uma coluna extra denominada "Missing", que explicita a linha do código que não está coberta por testes. No caso, a linha 36 do arquivo bytebank.py.
+
+Então podemos ver que se refere ao código
+```
+def __str__(self):
+        return f'Funcionario({self._nome}, {self._data_nascimento}, {self._salario})'
+```
+Com isso, poderíamos testar o método str com 
+```
+def test_retorno_str(self):
+    nome, data_nascimento, salario = 'Teste', '12/03/2000', 1000 # given
+    esperado = 'Funcionario (Teste, 12/03/2000, 1000)'
+
+    funcionario_teste = Funcionario (nome, data_nascimento, salario)
+    resultado = funcionario_teste.__str.__() # when
+
+    assert resultado == esperado #then
+```
+Porém note que tal método é uma estrtura base do python, e não deveríamos ter que testar estruturas intrínsicas do python. Em vez de criar testes para questões de linguagem, podemos informar ao coverage do Pytest que existem algumas exceções, isto é, algumas linhas no nosso código que não é preciso testar.
+
+Dentro do diretório bytebank.tdd, criaremos um arquivo chamado .coveragerc. Assim como o pytest.ini, o .coveragerc também precederá as configurações básicas, dessa vez para a extensão do coverage do Pytest. Neste arquivo, vamos definir algumas configurações para nosso relatório (report), indicando linhas que queremos que sejam excluídas do escaneamento:
+```
+[report]
+exclude_lines =
+    def __str__
+```
+
+Novamente rodando 'pytest --cov=codigo tests/ --cov-report term-missing' temos miss = 0.
+
+## Gerando relatórios e configurações
+
+Como vimos sabemos que dando os comandos 'pytest --cov=codigo tests/ --cov-report term-missing' ou 
+'pytest --cov=codigo tests/ --cov-report html' são duas opções de consulta sobre a cobertura de testes.
+Podemos configurar os comandos anteriores. Quando damos o comando 'pytest --cov' o pytest realiza os teste em todas as pastas do nosso, tornando o comando 
+ '-cov=codigo tests/' desnecessário. Ao configurar o  source, ao rodar pytest --cov, apenas o diretório codigo será compreendido. O arquivo .coveragerc deve ficar da forma 
+ ```
+ [run]
+source = ./codigo
+
+[report]
+exclude_lines =
+    def __str__
+```
+Também o relatório HTML é gerado numa pasta de nome htmlcov, mas gostaríamos de guardá-lo em uma pasta própria. No arquivo .coveragerc, vamos personalizar esse local de armazenamento:
+```
+[run]
+source = ./codigo
+
+[report]
+exclude_lines =
+    def __str__
+
+[html]
+directory = coverage_relatorio_html
+```
+No pytest.ini podemos configurar da seguinte forma
+```
+[pytest]
+addopts = -v --cov=codigo tests/ --cov-report term-missing
+markers =
+    calcular_bonus: Teste para o metodo calcular_bonus
+```
+Assim, toda vez que executarmos pytest serão adotadas as tags -v, --cov=codigo e --cov-report term-missing. Em outras palavras, o retorno sempre será verboso, os testes sempre serão executados no diretório codigo e sempre geraremos um relatório term-missing. Outra opção seria configurar para recebermos um relatório HTML.
+
+Outra opção seria gerar um relatório em xml ao invés de html. Para isso
+```
+pytest --cov-report xml
+```
+
+Daqui daremos mais um commit com nome "relatorio".
