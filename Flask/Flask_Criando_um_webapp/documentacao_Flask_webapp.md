@@ -341,6 +341,79 @@ E devemos importar o **redirect** no topo do código.
 
 Aqui daremos mais um commit com nome "criando formulário".
 
+## Estilizando as páginas
+
+Vamos estilizar as páginas do nosso projeto com o bootstrap. Em https://getbootstrap.com/docs/5.2/getting-started/download/
+
+![bootstrap](../../Imagens/bootstrap_imagem.png)
+
+Baixe esta opção. Crie uma pasta com nome **static** e depois de extrair, em css, copie o arquivo **bootstrap.css** e cole tal arquivo na pasta **static**. Agora tanto em **lista.html** e **novo.html**
+abaixo da tag title insira 
+```
+<link rel="stylesheet" href="../static/bootstrap.css">
+```
+
+## Reutilizando os arquivos html
+
+Note que os arquivos html tem muito em comum, imagine que queremos fazer uma alteração neles como foi feito anteriormente, será que não temos como centralizar tais partes comuns em um único código, reduzindo assim a complexidade e dificulade de manunteção do nosso projeto? 
+
+Em **templates** crie o arquivo **templates.html** e retire o código abaixo de **lista.html** e **novo.html** e cole em **templates.html**.
+```
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jogoteca</title> 
+    <link rel="stylesheet" href="../static/bootstrap.css">
+  </head>
+  <body>
+    <div class="container">
+        <div class="page-header">
+            <h1>{{ titulo }}</h1>
+        </div>
+    </div>
+  </body>
+</html>
+```
+O restante do código de **lista.html** e **novo.html**  insira dentro de tag abaixo:
+```
+{% extends "template.html"%}
+{% block conteudo %}
+    -coloque o código aqui
+{% endblock %}
+```
+Em **templantes.html** no lugar de 
+```
+<div class="container">
+    <div class="page-header">
+        <h1>{{ titulo }}</h1>
+    </div>
+</div>
+```
+insira
+```
+<div class="container">
+    <div class="page-header">
+        <h1>{{ titulo }}</h1>
+    </div>
+    {% block conteudo %}{% endblock %}
+</div>
+```
+Por último substitua
+```
+<link rel="stylesheet" href="../static/bootstrap.css">
+```
+por 
+```
+<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.css') }}">
+```
+A função url_for irá procurar o arquivo bootstrap.css nas em static ou em suas subpastas.
+
+Aqui darei mais um commit com o nome de "partials no Flask".
+
+
+
 
 
 
