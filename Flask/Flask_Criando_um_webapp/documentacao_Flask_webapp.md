@@ -412,11 +412,163 @@ A função url_for irá procurar o arquivo bootstrap.css nas em static ou em sua
 
 Aqui darei mais um commit com o nome de "partials no Flask".
 
+## Criando usuários
 
+Queremos criar um sistema de autenticação, de forma que só quem estiver logado consiga inserir novos jogos. Caso o usuário não esteja logado(então devemos realizar uma verificaçao) ele deve ser direcionado uma uma pagina login, se ele for autenticado deve ser direcionado para a página http://127.0.0.1:5000/novo, caso contrário deve continuar na página login.
 
+Primeiro vamos criar a página login e sua rota. Insira a rota
+```
+@app.route('/login')
+def login():
+    return render_template('login.html')
+```
+E em template crie o arquivo **login.html**
+```
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jogoteca</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.css') }}">
+  </head>
+  <body>
+    <div class="container">
+        <h1>Faça seu login</h1>
+        <form method="POST" action="/autenticar">
+            <p><label>Nome de usuário:</label> <input class="form-control" type="text" name="usuario" required></p>
+            <p><label>Senha:</label> <input class="form-control" type="password" name="senha" required></p>
+            <p><button class="btn btn-primary" type="submit">Entrar</button></p>
+        </form>
+    </div>
+</body>
+</html>
+```
+Agora crie a rota autenticar
+```
+@app.route('/autenticar', methods=['POST', ])
+def autenticar():
+    if 'alohomora' == request.form['senha']:
+        return redirect('/')
+    else:
+        return redirect('/login')
+```
+Até o momento não estamos usando banco de dados, uma vez que o usuario foi logado como podemos salvar qual usuario foi logado? Para isso vamos usar o comando **session**, que irá utilizar cookies para salvar esse dado, também queremos mostrar uma mensagem informando se foi realizado login ou nao por meio do comando flash, assim, no começo do código importe  flash e session e a rota autenticar deve ficar da seguinte forma:
 
+```
+@app.route('/autenticar', methods=['POST', ])
+def autenticar():
+    if 'alohomora' == request.form['senha']:
+        session['usuario_logado'] = request.form['usuario']
+        flash(request.form['usuario'] + ' logou com sucesso!')
+        return redirect('/')
+    else:
+        flash('Usuário não logado.')
+        return redirect('/login')
+```
+Outro passo importante é adicionar uma secret_key, que adicionará uma camada de criptografia nos cookies, então abaixo do comando **app = Flask(__name__)**   adicione 
+```
+app.secret_key = 'teste'
+```
+Por úlltimo devemos configurar onde(que cor etc) será mostrado as mensagens ao usuario, assim, em baixo
+do comando **<div class="container">** em **login.html** e **template.html** adicione
+```
+{% with messages = get_flashed_messages() %}
+    {% if messages %} 
+        <ul id="messages" class="list-unstyled">
+        {% for message in messages %}
+            <li class="alert alert-success">{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+```
+O próximo passo é configurarmos o código para também ser possível deslogar. Vamos criar uma rota que apaga **session['usuario_logado']**. Portanto o a rota ficará 
+```
+@app.route('/logout')
+def logout():
+    session['usuario_logado'] = None
+    flash('Logout efetuado com sucesso!')
+    return redirect('/')
+```
+Porém note que mesmo estando deslogado pedomos acessar a http://127.0.0.1:5000/novo. Ainda falta fazer a verificação para isso, dessa forma, na rota novo coloque
+```
+@app.route('/novo')
+def novo():
+    if 'usuario_logado' not in session or session['usuario_logado'] == None:
+        return redirect('/login')
+    return render_template('novo.html', titulo='Novo Jogo')
+```
+Além disso, o ideal seria se estivermos na página novo e formos direcionados para a página login, após
+o login, fossemos redirecionados para a página novo. Uma forma de fazer seria em autenticar/ redireciornarmos para a página novo, porém assim sempre seríamos redirecionados para a página novo, 
+até mesmo quando não quissesemos inserir novos jogos. Portanto vamos fazer de outro modo (usando query string). A ideia é que se estivermos na página novo e formos direcionados para a página login carreguemos essa informação na url (veja que como isto não é sigiloso não temos problema de fazer isto).  Portanto novo/ deve ficar desta forma
+```
+@app.route('/novo')
+def novo():
+    if 'usuario_logado' not in session or session['usuario_logado'] == None:
+        return redirect('/login?proxima=novo')
+    return render_template('novo.html', titulo='Novo Jogo')
+```
+Agora em login/ precisamos reter essa informação. Use o request.args para isso
+```
+@app.route('/login')
+def login():
+    proxima = request.args.get('proxima')
+    return render_template('login.html', proxima = proxima)
+```
+Agora, iremos carregar tal informação pra o login.html. Assim em form insira esta linha
+```
+<input type="hidden" name="proxima" value="{{ proxima }}">
+```
+Como os dados do formulário serão enviados para o autenticar/ temos que fazer seu tratamento. Primeiro temos que puxá-lo do formulário e depois inserir no redirect. Insira em **auntenticar/**
+```
+proxima_pagina = request.form['proxima']
+return redirect('/{}'.format(proxima_pagina)
+```
+no lugar de
+```
+return redirect('/')
+```
 
+## Urls dinâmicas
 
+Noter que ao chamar uma rota no redirect referenciamos sua url. Agora imagine que trocamos a url, então
+todas as rotas que referenciam ela teriam que ser mudados. Para facilitar a manuntenção no nosso código, vamos referenciar uma rota pelo nome da sua função, ao invés da url. Por exemplo, ao invés de
+usarmos 
+```
+return redirect('/')
+```
+usaremos
+``` 
+return redirect(url_for('index'))
+```
+Nos devemos importar o comando **url_for** de flask. Faça isso para todas as rotas, em especial a função **url_for** também envia parametros, como na rota abaixo  troque 
+```
+return redirect('/login?proxima=novo')
+```
+por
+```
+ return redirect(url_for('login', proxima=url_for('novo')))
+ ```
+Na rota autenticar devemos trocar
+```
+return redirect('/{}'.format(proxima_pagina))
+```
+por 
+```
+return redirect(proxima_pagina)
+```
+Pois agora o comando **request.args.get('proxima')** retorna "/novo" (anteriormente  retornava "novo"). Além disso, também podemos fazer tal troca no arquivo login.html. Assim, troque 
+```
+<form method="POST" action="/autenticar">
+```
+por 
+```
+<form method="POST" action="{{ url_for('autenticar') }}">
+```
+Também podemos fazer o mesmo para novo.html.
+
+Aqui darei um commit com o nome "urls dinamicas".
 
 
 
