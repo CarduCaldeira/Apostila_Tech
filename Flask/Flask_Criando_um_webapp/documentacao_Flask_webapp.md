@@ -570,6 +570,48 @@ Também podemos fazer o mesmo para novo.html.
 
 Aqui darei um commit com o nome "urls dinamicas".
 
+## Criando lista de usuarios
+
+Note que não temos nenhum tipo de validação para o nickname dos usuarios, basta ter a senha e já é possível acessar. Iremos criar uma lista de usuarios que terão acesso.
+```
+class Usuario:
+    def __init__(self, nome, nickname, senha):
+        self.nome = nome
+        self.nickname = nickname
+        self.senha = senha
+```
+Instancie três usuarios 
+```
+usuario1 = Usuario("Bruno Divino", "BD", "alohomora")
+usuario2 = Usuario("Camila Ferreira", "Mila", "paozinho")
+usuario3 = Usuario("Guilherme Louro", "Cake", "Python_eh_vida")
+```
+Crie um  dicionario com tais usuarios
+```
+usuarios = { usuario1.nickname : usuario1,
+             usuario2.nickname : usuario2,
+             usuario3.nickname : usuario3 }
+```
+E a rota do autenticar deve ficar  assim
+```
+def autenticar():
+    if request.form['usuario'] in usuarios:
+        usuario = usuarios[request.form['usuario']]
+        if request.form['senha'] == usuario.senha:
+            session['usuario_logado'] = usuario.nickname
+            flash(usuario.nickname + ' logado com sucesso!')
+            proxima_pagina = request.form['proxima']
+            return redirect(proxima_pagina)
+        else:
+            flash('Usuário não logado.')
+            return redirect(url_for('login'))
+    else:
+        flash('Usuário não logado.')
+        return redirect(url_for('login'))
+```
+Aqui darei um novo commit "criando usuarios"
+
+
 
 
     
