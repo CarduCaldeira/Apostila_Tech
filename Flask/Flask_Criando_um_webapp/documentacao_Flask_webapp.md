@@ -22,7 +22,7 @@ python3 -m venv ./venv
 ```
 Para ativar 
 ```
-source /home/carlos/Documentos/Apostila_Tech/Apostila_Tech/Python_TDD/venv/bin/activate
+source /home/carlos/Documentos/Apostila_Tech/Apostila_Tech/Flask/Flask_Criando_um_webapp/venv/bin/activate
 ```
 Para instalar os requirementos rode
 ```
