@@ -127,3 +127,103 @@ dados_input = [dados[col] for col in colunas]
 serve para enviar os dados para o modelo na ordem correta, indepedente da order que o usuario informar o json.
 
 Aqui darei um commit "precificando casas no Flask".
+
+## Serializando nosso modelo
+
+Podemos melhorar nosso projeto ao serializarmos nosso modelo. Imagine que temos um modelo robusto que demora minutos (ou até horas para treinar), além disso nossa base de dados é diaria, isto é, todo dia teremos que retreinar nosso modelo. Ao serializarmos nosso modelo a manutenção do nosso projeto fica mais pratica e eficiente.
+
+Para isso crie um arquivo com nome **auxiliar.py** e coloque o código
+```
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+import pickle
+
+df = pd.read_csv('casas.csv')
+
+X = df.drop('preco',axis =1)
+y = df['preco']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+modelo = LinearRegression()
+modelo.fit(X_train, y_train)
+
+# create an iterator object with write permission - model.pkl
+with open('modelo.sav', 'wb') as files:
+    pickle.dump(modelo, files)
+```
+ao rodá-lo, será criado um arquivo **modelo.sav** que transforma nosso modelo em binário.
+Agora, podemos retirar de **main.py** o código
+```
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+df = pd.read_csv('casas.csv')
+X = df.drop('preco',axis =1)
+y = df['preco']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+modelo = LinearRegression()
+modelo.fit(X_train, y_train)
+```
+Para carregar o modelo insira no **main.py**
+```
+import pickle
+modelo = pickle.load(open('modelo.sav','rb'))
+```
+Também podemos inserir uma autenticação nos endpoints. Para isso insira
+```
+from flask_basicauth import BasicAuth
+
+app.config['BASIC_AUTH_USERNAME'] = 'carlos'
+app.config['BASIC_AUTH_PASSWORD'] = '123'
+
+basic_auth = BasicAuth(app)
+```
+E em cima do endpoint que deseja que tenha validação, insira 
+```
+@basic_auth.required
+```
+Ao final o código deve ficar
+```
+from flask import Flask, request, jsonify
+from flask_basicauth import BasicAuth
+from textblob import TextBlob #biblioteca de analise de sentimento
+from sklearn.linear_model import LinearRegression
+import pickle
+
+modelo = pickle.load(open('modelo.sav','rb'))
+colunas = ['tamanho','ano','garagem']
+
+app = Flask(__name__)
+app.config['BASIC_AUTH_USERNAME'] = 'carlos'
+app.config['BASIC_AUTH_PASSWORD'] = '123'
+
+basic_auth = BasicAuth(app)
+
+
+@app.route('/')
+def home():
+    return "Minha primeira Api"
+
+@app.route('/sentimento/<frase>')
+@basic_auth.required
+def sentimento(frase):
+    tb = TextBlob(frase)
+    tb_en = tb.translate(from_lang='pt',to='en')
+    polaridade = tb_en.sentiment.polarity
+    return 'polaridade:{}'.format(polaridade)
+
+@app.route('/cotacao/', methods=['POST'])
+@basic_auth.required
+def cotacao():
+    dados = request.get_json()
+    dados_input = [dados[col] for col in colunas]
+    preco = modelo.predict([dados_input])
+    return jsonify(preco=preco[0])
+
+app.run(debug=True)
+```
+Agora vamos testar nossa aplicação.  Para isso criei o **request.ipynb** e basta rodá-lo.
+
+Commit com nome "api de machine learning finalizada".
