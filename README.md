@@ -5,6 +5,7 @@ Lista de comandos:
 - [Flask](Flask/Flask_Criando_um_webapp/documentacao_Flask_webapp.md)
 - [Flask: avançando no desenvolvimento web](Flask/Flask_curso_2/documentacao_Flask_curso_2.md)
 - [Comandos MySQL](MySQL/comandos_MySQL.md)
+- [MLOPS: APIS](MLOps/Machine_Learning_Flask/Machine_Learning_Flask.md)
 - [Comandos Django Web]()
 - [Comandos Django Api Rest]()
 - [Comandos Python]()
