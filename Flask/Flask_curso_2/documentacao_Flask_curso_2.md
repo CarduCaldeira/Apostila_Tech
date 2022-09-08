@@ -532,6 +532,326 @@ Podemos fazer o mesmo tratamento com imagem que foi feito com a rota **novo** co
 
 Aqui darei um novo commit "tratamento de imagem".
 
+## Um pouco de javascript
 
+Note que quando selecionamos uma imagem ela não altera logo em seguida gostariamos que nossa pagina tivesse tal comprtamento. Para isso  vamos usar javascript. Cire um arquivo **app.js** em static e insira
+```
+$('form input[type="file"]').change(event => {
+  let arquivos = event.target.files;
+  if (arquivos.length === 0) {
+    console.log('sem imagem pra mostrar')
+  } else {
+      if(arquivos[0].type == 'image/jpeg') {
+        $('img').remove();
+        let imagem = $('<img class="img-fluid">');
+        imagem.attr('src', window.URL.createObjectURL(arquivos[0]));
+        $('figure').prepend(imagem);
+      } else {
+        alert('Formato não suportado')
+      }
+  }
+});
+```
+Crie um novo arquivo chamado **jquery.js** e dentro da pasta static e inserir o código do JQuery versão 3.6.0.
+
+Por fim adicione em template(por padrão adicionamos no fim do body)
+```
+<script type="text/javascript" src="{{ url_for('static', filename='jquery.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='app.js') }}"></script>
+```
+
+## Contornando o Cache
+
+Temos um  problema em relação ao nosso código. Estamos atualizando as imagens sempre com o mesmo nome,
+isso pode gerar problemas em relação ao cache. Como o nome não é alterado o cache pode não atualizar, logo mesmo que mudemos a imagem, como a pagina esta consultando o cache( que não foi atualizado) ela não ira mostrar a nossa imagem. Para corrigir isso crie um arquivo **helpers.py**
+```
+import os
+from jogoteca import app
+
+def recupera_imagem(id):
+    for nome_arquivo in os.listdir(app.config['UPLOAD_PATH']):#os.listdir serve para listar os arquivos daquela pasta 
+        if f'capa{id}' in nome_arquivo:
+            return nome_arquivo
+
+    return 'capa_padrao.jpg'
+
+def deleta_arquivo(id):
+    arquivo = recupera_imagem(id)
+    if arquivo != 'capa_padrao.jpg':
+    os.remove(os.path.join(app.config['UPLOAD_PATH'], arquivo))
+```
+
+Primeiro a função **recupera_imagem** sera para pegar a imagem desejada e além disso temos que criar também a função
+**deleta_arquivo** (como queremos salvar as imagens com nome distintos temos que excluir a imagem antiga). Note também que estamos usando o comando **os.path.join(app.config['UPLOAD_PATH'], arquivo))** que ira concatenar o caminho(novamente, é melhor informar o caminho dinamicamente, por exemplo se tivessemos o caminho projeto/uploads/capa1.png não daria certo no windows).
+
+Em **views.py** deixe a rota editar da seguinte forma 
+```
+@app.route('/editar/<int:id>')
+def editar(id):
+    if 'usuario_logado' not in session or session['usuario_logado'] == None:
+        return redirect(url_for('login', proxima=url_for('editar', id=id)))
+    jogo = Jogos.query.filter_by(id=id).first()
+    capa_jogo = recupera_imagem(id)
+    return render_template('editar.html', titulo='Editando Jogo', jogo=jogo, capa_jogo=capa_jogo)
+```
+E em **editar.html**  troque a variavel **nome_arquivo** para **capa_jogo**
+```
+<img class="img-fluid" src="{{ url_for('imagem', nome_arquivo=capa_jogo) }}">
+```
+E agora atualize o metodo **atualizar**
+```
+@app.route('/atualizar', methods=['POST',])
+def atualizar():
+    jogo = Jogos.query.filter_by(id=request.form['id']).first()
+    jogo.nome = request.form['nome']
+    jogo.categoria = request.form['categoria']
+    jogo.console = request.form['console']
+
+    db.session.add(jogo)
+    db.session.commit()
+
+    arquivo = request.files['arquivo']
+    upload_path = app.config['UPLOAD_PATH']
+    timestamp = time.time()
+    deleta_arquivo(jogo.id)
+    arquivo.save(f'{upload_path}/capa{jogo.id}-{timestamp}.jpg')
+
+    return redirect(url_for('index'))
+```
+Também devemos implementar o mesmo padrão de nome de imagem(que será determinado pela hora exata de upload da imagem) no metodo criar
+```
+@app.route('/criar', methods=['POST',])
+def criar():
+    nome = request.form['nome']
+    categoria = request.form['categoria']
+    console = request.form['console']
+
+    jogo = Jogos.query.filter_by(nome=nome).first()
+
+    if jogo:
+        flash('Jogo já existente!')
+        return redirect(url_for('index'))
+
+    novo_jogo = Jogos(nome=nome, categoria=categoria, console=console)
+    db.session.add(novo_jogo)
+    db.session.commit()
+
+    arquivo = request.files['arquivo']
+    upload_path = app.config['UPLOAD_PATH']
+    timestamp = time.time()
+    arquivo.save(f'{upload_path}/capa{novo_jogo.id}-{timestamp}.jpg')
+
+    return redirect(url_for('index'))
+```
+Por ultimo importe os arquivos
+```
+from helpers import recupera_imagem, deleta_arquivo
+import time
+```
+
+## Adiconando botoes
+
+Vamos inserir botões em lista.html para conectar as rotas de novo, logout e login. Insira
+```
+<a class="btn btn-primary" href="{{ url_for('login') }}">Login</a>
+<a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a>
+<a class="btn btn-primary" href="{{ url_for('novo') }}">Novo Jogo</a> 
+```
+e abaixo de 
+```
+<button type="submit" class="btn btn-primary btn-salvar">Salvar</button>
+```
+insira
+```
+<a class="btn btn-danger" href="{{ url_for('index') }}">Voltar</a>
+```
+
+## Validação 
+Queremos fazer uma validação dos jogos adicionados. O proprio Flask possui um pacote que nos ajudara a fazer isto (além de melhorar nossa segurança) .
+Adicione em **jogoteca.py**
+```
+from flask_wtf.csrf import CSRFProtect
+```
+E no bash de 
+```
+pip install flask-wtf==1.0.0
+```
+Para instanciar a proteção contra CSRF no arquivo **jogoteca.py**
+```
+csrf = CSRFProtect(app)
+```
+Para podermos utilizar um formulário do Flask WTF, precisamos criar uma classe que vai representar esse formulário bem parecido com o que fizemos com o SQL Alchemy.
+Faça o import do FlaskForm e demais bibliotecas necessárias do wtforms no **helpers.py**
+```
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField, PasswordField, validators
+```
+E também adicione as seguintes classes no **helpers.py**
+```
+class FormularioJogo(FlaskForm):
+    nome = StringField('Nome do Jogo', [validators.DataRequired(), validators.Length(min=1, max=50)])
+    categoria = StringField('Categoria', [validators.DataRequired(), validators.Length(min=1, max=40)])
+    console = StringField('Console', [validators.DataRequired(), validators.Length(min=1, max=20)])
+    salvar = SubmitField('Salvar')
+
+class FormularioUsuario(FlaskForm):
+    nickname = StringField('Nickname', [validators.DataRequired(), validators.Length(min=1, max=8)])
+    senha = PasswordField('Senha', [validators.DataRequired(), validators.Length(min=1, max=100)])
+    login = SubmitField('Login')
+```
+Em **views.py** importe as classes **FormularioJogo, FormularioUsuario**. E insira o comando
+```
+form = FormularioJogo()
+```
+acima do render_template e no render_template envie como paramentro o form com nome form.
+Com isso precisamos alterar o formulario em **novo.html**, **editar** e **login.html**. Em **novo.html** altere
+```
+<label for="nome">Nome</label>
+<input type="text" id="nome" name="nome" class="form-control">
+```
+por
+```
+{{ form.nome.label(class="form-label") }}
+{{ form.nome(class="form-control") }}
+```
+Faça o mesmo para os campos categoria e console. Também troque o botão 
+```
+<button type="submit" class="btn btn-primary btn-salvar">Salvar</button>
+```
+por
+```
+{{ form.salvar(class="btn btn-primary") }}
+```
+Como os dados do formulario são enviados para o metodo criar então precisamos alterar ele também. Adicione em **criar**
+form = FormularioJogo(request.form)
+```
+if not form.validate_on_submit():
+    return redirect(url_for('novo'))
+```
+A grande vantagem de usar o wtforms é que quando validamos so aplicamos um if, ao invés de varios, assim, deixamos o código mais limpo. Para o wtforms não usamos o comando request.form, por isso troque eles por 
+```
+nome = form.nome.data
+categoria = form.categoria.data
+console = form.console.data
+```
+Com isso validamos o formulario para criar um novo jogo. Iremos fazer o mesmo com o formulário editar (com algumas diferenças já que no formulário editar já queremos sugerir os nomes salvos dentro do formulário). Assim, em **editar.html**
+adicione 
+```
+form = FormularioJogo()
+form.nome.data = jogo.nome
+form.categoria.data = jogo.categoria
+form.console.data = jogo.console
+```
+e no render_template mande como paramentro o form. Agora em **editar.html** faça o mesmo que foi feito
+como o **novo.html** e substitua os labels e inputs.
+
+Note agora que só estamos usando o **jogo.id** nesse formulário (sem precisar dos outros atributos do do objeto jogo, já que agora estamos usando os atributos do form), assim ao invés de passar o jogo no render template podemos so passor o id.
+
+Dando prosseguimento a nossa validação em formulário insira em **atualizar** o comando no inicio do metodo
+```
+form = FormularioJogo(request.form)
+```
+Queremos que caso a validação seja True a atualização tenha prosseguimento eno final sejamos redirecionados para a página principal, caso contrário devemos ser apenas redirecionados
+para a página principal. Assim o metodo autenticar fica
+```
+@app.route('/atualizar', methods=['POST',])
+def atualizar():
+    form = FormularioJogo(request.form)
+
+    if form.validate_on_submit():
+        jogo = Jogos.query.filter_by(id=request.form['id']).first()
+        jogo.nome = form.nome.data
+        jogo.categoria = form.categoria.data
+        jogo.console = form.console.data
+
+        db.session.add(jogo)
+        db.session.commit()
+
+        arquivo = request.files['arquivo']
+        upload_path = app.config['UPLOAD_PATH']
+        timestamp = time.time()
+        deleta_arquivo(id)
+        arquivo.save(f'{upload_path}/capa{jogo.id}-{timestamp}.jpg')
+
+    return redirect(url_for('index'))
+```
+Por último vamos fazer a validação do login. Como já criamos a classe **FormularioUsuario** em **helpers.py**, em **login** no **views.py** adicione 
+```
+form = FormularioJogo()
+```
+e envie pelo render_template o objeto form. Agora em **login.html**  troque 
+```
+<p><label>Nome de usuário:</label> <input class="form-control" type="text" name="usuario" required></p>
+<p><label>Senha:</label> <input class="form-control" type="password" name="senha" required></p>
+<p><button class="btn btn-primary" type="submit">Entrar</button></p>
+```
+por 
+```
+<div class="form-group">
+    {{ form.nickname.label(class="form-label") }}
+    {{ form.nickname(class="form-control") }}
+</div>
+<div class="form-group">
+    {{ form.senha.label(class="form-label") }}
+    {{ form.senha(class="form-control") }}
+</div>
+<div class="form-group">
+    {{ form.login(class="btn btn-primary") }}
+    <a class="btn btn-danger" href="{{ url_for('index') }}">Voltar</a>
+</div>
+```  
+Por último em **autenticar** adicione
+```
+form = FormularioUsuario(request.form)
+```
+e troque 
+```
+request.form['usuario'] 
+```
+por 
+```
+form.nickname.data
+```
+Também 
+```
+request.form['senha']
+```
+por
+```
+form.senha.data
+```                             
+## CRSF token
+
+O Cross-Site Request Forgery ou CSRF é uma vulnerabilidade na segurança da web que possibilita a um indivíduo mal intencionado se passar por um usuário inocente. Assim, a ameaça pode se disfarçar como o servidor e passar informações através do método POST.
+
+Uma maneira mais prática de entender isso é através de um exemplo:
+```
+    Lucas está trabalhando em seu computador e se dá conta de que precisa transferir dinheiro de sua conta no banco. Ele passa por todo o processo de autenticação de usuário, acessa a sua conta no banco e faz a transferência necessária.
+
+    Em seguida, se lembra de que deve checar seus e-mails e acessa um e-mail de origem duvidosa, que aparentemente não o leva a lugar nenhum.
+
+    Contudo, poucos minutos depois ele recebe uma notificação o informando que uma quantia exorbitante foi transferida de sua conta. Lucas havia sido roubado por um hacker mal intencionado através do uso do CSRF.
+```
+Vamos analisar o ocorrido passo a passo: primeiramente, Lucas acessa sua conta no banco e faz a transferência que precisa. Ao realizar essa ação, o navegador dele cria um session token que caracteriza seu acesso autenticado ao banco.
+
+Depois Lucas acessa o e-mail de origem duvidosa. Esse e-mail, enviado pelo hacker, possui um link que, ao simples acesso, permite utilizar o session token de Lucas. Dessa forma, é preenchido um formulário com informações de transferência bancária e o session token é usado para autenticá-lo e permitir que o método POST ocorra sem mais problemas.
+
+A situação caracteriza a falta do uso do CSRF e aconteceu porque o servidor do banco não possui a proteção correta contra esse tipo de ataque.
+
+Como vimos no curso, utilizamos um token próprio para impedir essa vulnerabilidade. chamado de CSRF Token. Ele consiste em uma série de caracteres aleatórios, gerados a cada formulário a ser preenchido pelo usuário que é enviado pelo servidor.
+
+Após o recebimento pelo usuário, o token é checado novamente. O servidor só aceita o POST caso o CSRF Token se provar igual ao enviado inicialmente.
+
+Diferentemente do session token e dos cookies, o CSRF Token não pode ser utilizado por um hacker mal intencionado.
+
+Dessa forma, a existência do CSRF Token é crucial em todo formulário da web, para que o envio de formulários não seja forjado por terceiros.
+
+Como já adicionamos as configurações necessárias para CSRF Token no **jogoteca.py** falta apenas adicionar nos formulários. Assim em **editar.html** abaixo da tag hidden
+```
+{{ form.csrf_token() }}
+```
+faça o mesmo para o **login.html** e para o **novo.html** e insira logo apos a tag fieldset.
+
+aqui darei um commit "validando formulario e CSRF".
 
 
