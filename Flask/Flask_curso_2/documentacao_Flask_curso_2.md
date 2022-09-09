@@ -854,4 +854,112 @@ faça o mesmo para o **login.html** e para o **novo.html** e insira logo apos a 
 
 aqui darei um commit "validando formulario e CSRF".
 
+## Aumentando a segurança da nossa aplicação e refatorando o projeto
+
+Primeiro vamos dividir o nosso arquivo **views.py** em rotas referentes ao usuario com nome **views_user.py** e as rotas referentes ao jogos com nome **views_game.py**. Isto é, as rotas **login**, **logout** e **autenticar** vão para **views_user.py**.
+
+Note que quando salvamos os usuarios a senha foi registrada de forma explicita no banco de dados,
+um  problema disso é que caso alguem tenha acesso indevido ao nosso banco de dados ele facilmente 
+podera roubar as senhas dos usuarios. Como podemos aumentar a nossa segurança? Para isso vamos usar o Flask BCrypt. O Bcrypt é uma ferramenta que utiliza um algoritmo baseado em hashing para garantir a segurança de senhas e dados gerais em aplicações web.
+
+Instale o Bcrypt com o comando 
+```
+pip install flask-bcrypt==0.7.1
+```
+Importe a função generate_password_hash do Flask BCrypt no **prepara_banco.py**
+```
+from flask_bcrypt import generate_password_hash
+```
+Reescreva 
+```
+usuarios = [
+      ("Bruno Divino", "BD", "alohomora"),
+      ("Camila Ferreira", "Mila", "paozinho"),
+      ("Guilherme Louro", "Cake", "python_eh_vida")
+]
+```
+como 
+```
+usuarios = [
+      ("Bruno Divino", "BD", generate_password_hash("alohomora").decode('utf-8')),
+      ("Camila Ferreira", "Mila", generate_password_hash("paozinho").decode('utf-8')),
+      ("Guilherme Louro", "Cake", generate_password_hash("python_eh_vida").decode('utf-8'))
+]
+```
+O generate_password_hash ira gerar um hash a partir da senha informada. Também devemos instalar outra versão de um pacote que já temos
+```
+pip install werkzeug==2.0.0
+``
+Em **jogoteca.py** importe o Bcrypt
+```
+from flask_bcrypt import Bcrypt
+```
+E instancie ele
+```
+bcrypt = Bcrypt(app)
+```
+Importe a funçao check_password_hash em **views_user.py**
+```
+from flask_bcrypt import check_password_hash
+```
+E mude o atualizar de 
+```
+@app.route('/autenticar', methods=['POST',])
+def autenticar():
+    form = FormularioUsuario(request.form)
+    usuario = Usuarios.query.filter_by(nickname=form.nickname.data).first()
+    if usuario:
+        if form.senha.data == usuario.senha:
+            session['usuario_logado'] = usuario.nickname
+            flash(usuario.nickname + ' logado com sucesso!')
+            proxima_pagina = request.form['proxima']
+            return redirect(proxima_pagina)
+        else:
+            flash('Senha incorreta')  
+            return redirect(url_for('login'))      
+    else:
+        flash('Usuário não logado.')
+        return redirect(url_for('login'))
+```
+para 
+```
+@app.route('/autenticar', methods=['POST',])
+def autenticar():
+    form = FormularioUsuario(request.form)
+    usuario = Usuarios.query.filter_by(nickname=form.nickname.data).first()
+    senha = check_password_hash(usuario.senha, form.senha.data)
+    if usuario and senha:
+        session['usuario_logado'] = usuario.nickname
+        flash(usuario.nickname + ' logado com sucesso!')
+        proxima_pagina = request.form['proxima']
+        return redirect(proxima_pagina)
+    else:
+        flash('Usuário não logado.')
+        return redirect(url_for('login'))
+```
+Note que check_password_hash(usuario.senha, form.senha.data) retorna um booleano( ele retorna True caso o hash seja igual , caso contrário falso).
+
+Encryption vs. Hashing
+
+Hashing consiste em transformar um determinado input de dados dado pelo usuário em um hash por meio de uma fórmula matemática. Todo hash consiste em uma série de letras e números de mesmo tamanho, não importando o tamanho do dado fornecido pelo usuário.
+
+O processo de hashing é considerada uma one-way conversation (conversa de uma única via), ou seja, uma vez que um determinado dado passou pelo processo de hashing, se torna impossível desfazê-lo para se encontrar o input original.
+
+Essa característica reduz o risco de vazamento de informações armazenadas em bancos de dados e impõe mais dificuldades a ataques diversos. O hashing pode ser considerado um dos métodos mais eficientes de armazenamento de senhas.
+
+Encryption é outro método de proteção de informações, porém, diferentemente do hashing, se trata de um método two-way conversation (conversa de mão dupla). Isso significa que uma informação que passou pelo processo de encryption pode ser descoberta com a inversão do processo.
+
+Para isso, basta que se tenha um programa específico dedicado à inversão e a encryption key. Apesar de não ser tão seguro para armazenamento de senhas quanto o hashing, a vantagem do encryption é poder ser utilizado de forma mais abrangente em diversas situações, tornando-o mais versátil.
+A Cifra Blowfish
+
+O que torna o Bcrypt especial é que, além de usar o método de hashing, seu funcionamento implica a utilização conjunta de hashing e da cifra Blowfish.
+
+Essa cifra é utilizada através da criação de certas keys que fazem parte de um processo de criptografia do próprio hash - a key faz parte do hash. Dessa forma, qualquer tentativa de ataque de força bruta acaba exigindo muito poder de processamento. Seria como trancar algo dentro de um cofre e colocar um cadeado. Contudo, o cadeado se encontra protegido por outro cadeado.
+
+Portanto, o Bcrypt acaba por ser um mecanismo de proteção de senhas comprovadamente eficaz e mais utilizado pelas mais diversas aplicações web do mercado. 
+
+darei um commit "flask bcrypt"
+
+
+
 
